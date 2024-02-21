@@ -1,0 +1,74 @@
+﻿@page "/counter"
+@using Syncfusion.Blazor.FileManager
+@using FileManager_FlatData.Data
+@using Microsoft.AspNetCore.Mvc
+@inject AmazonService AmazonService
+@inject AmazonS3FileProvider AmazonS3FileProvider
+<SfFileManager TValue="FileManagerDirectoryContent">
+    <FileManagerEvents TValue="FileManagerDirectoryContent" OnRead="OnRead" OnDelete="OnDelete" OnDetails="OnDetails" OnFolderCreate="OnModelCreate" OnSearch="OnSearch" OnRename="OnRename" OnCopy="OnCopy" OnMove="OnMove" OnUpload="OnUpload" BeforeImageLoad="BeforeImageLoad" BeforeDownload="BeforeDownload"></FileManagerEvents>
+</SfFileManager>
+@code{
+    public void OnSend(BeforeSendEventArgs args)
+    {
+
+    }
+    public void OnRead(ReadEventArgs<FileManagerDirectoryContent> args)
+    {
+        args.Response = AmazonS3FileProvider.GetFiles(args.Path, false, args.FileDetails);
+    }
+    public void OnDelete(DeleteEventArgs<FileManagerDirectoryContent> args)
+    {
+        args.Response = AmazonS3FileProvider.Delete(args.Path, args.Names, args.FileDetails);
+    }
+
+    public void OnDetails(DetailsEventArgs<FileManagerDirectoryContent> args)
+    {
+        string[] names = args.FileDetails.Select(x => x.Name).ToArray();
+        args.Response = AmazonS3FileProvider.Details(args.Path, names, args.FileDetails);
+    }
+
+    public void OnModelCreate(FolderCreateEventArgs<FileManagerDirectoryContent> args)
+    {
+        args.Response = AmazonS3FileProvider.Create(args.Path, args.CreatedFolderName, args.FileDetails);
+    }
+
+    public void OnSearch(SearchEventArgs<FileManagerDirectoryContent> args)
+    {
+        args.Response = AmazonS3FileProvider.Search(args.Path, args.SearchString, false, false, args.FileDetails);
+    }
+
+    public void OnRename(RenameEventArgs<FileManagerDirectoryContent> args)
+    {
+        args.Response = AmazonS3FileProvider.Rename(args.Path, args.Name, args.NewName, false, args.ShowFileExtension, args.FileDetails);
+    }
+
+    public void OnCopy(TransferEventArgs<FileManagerDirectoryContent> args)
+    {
+        args.Response = AmazonS3FileProvider.Copy(args.Path, args.TargetPath, args.Names, args.RenameFiles, args.TargetData, args.FileDetails);
+    }
+
+    public void OnMove(TransferEventArgs<FileManagerDirectoryContent> args)
+    {
+        args.Response = AmazonS3FileProvider.Move(args.Path, args.TargetPath, args.Names, args.RenameFiles, args.TargetData, args.FileDetails);
+    }
+
+    public void OnUpload(UploadEventArgs<FileManagerDirectoryContent> args)
+    {
+
+    }
+
+    public void BeforeImageLoad(BeforeImageLoadEventArgs<FileManagerDirectoryContent> args)
+    {
+        var result = AmazonS3FileProvider.GetImage(args.ImagePath, null, false, args.FileDetails);
+        args.FileStream = result.FileStream;
+    }
+
+    public void BeforeDownload(BeforeDownloadEventArgs<FileManagerDirectoryContent> args)
+    {
+        var downloadData = AmazonS3FileProvider.Download(args.DownloadData.Path, args.DownloadData.Names, args.DownloadData.DownloadFileDetails.ToArray());
+        args.FileStream = downloadData.FileStream;
+        args.DownloadFileName = downloadData.FileDownloadName;
+    }
+}
+
+

@@ -1,0 +1,141 @@
+﻿@page "/"
+@using Syncfusion.Blazor.FileManager
+@using FileManager_FlatData.Data
+@using Microsoft.AspNetCore.Mvc
+@inject PhysicalFileProvider PhysicalFileProvider
+<SfFileManager TValue="FileManagerDirectoryContent" View="ViewType.LargeIcons">
+    <FileManagerUploadSettings DirectoryUpload=false></FileManagerUploadSettings>
+    <FileManagerEvents TValue="FileManagerDirectoryContent" OnSend="OnSend" OnRead="OnRead" OnDelete="OnDelete"  Deleted="Deleted" OnSuccess="OnSuccess" OnGetDetails="OnDetails" OnFolderCreate="OnModelCreate" FolderCreated="ModelCreated" OnSearch="OnSearch" OnRename="OnRename" Renamed="Renamed" OnCopy="OnCopy" Copied="Copied" OnMove="OnMove" Moved="Moved" OnUpload="OnUpload" UploadSuccess="UploadSuccess" BeforeImageLoad="BeforeImageLoad" BeforeDownload="BeforeDownload"></FileManagerEvents>
+</SfFileManager>
+@code{
+    public void OnRead(ReadEventArgs<FileManagerDirectoryContent> args)
+    {
+        args.Response = PhysicalFileProvider.GetFiles(args.Path, false, args.FileDetails);
+    }
+
+    public void OnDelete(DeleteEventArgs<FileManagerDirectoryContent> args)
+    {
+        args.Response = PhysicalFileProvider.Delete(args.Path, args.Names, args.FileDetails);
+    }
+
+    public void Deleted(DeletedEventArgs<FileManagerDirectoryContent> args)
+    {
+
+    }
+
+    public void OnDetails(DetailsEventArgs<FileManagerDirectoryContent> args)
+    {
+        string[] names = args.FileDetails.Select(x => x.Name).ToArray();
+        args.Response = PhysicalFileProvider.Details(args.Path, names, args.FileDetails);
+    }
+
+    public void OnModelCreate(FolderCreateEventArgs<FileManagerDirectoryContent> args)
+    {
+        args.Response = PhysicalFileProvider.Create(args.Path, args.CreatedFolderName, args.FileDetails);
+    }
+
+    public void ModelCreated(FolderCreatedEventArgs<FileManagerDirectoryContent> args)
+    {
+
+    }
+
+    public void OnSearch(SearchEventArgs<FileManagerDirectoryContent> args)
+    {
+        args.Response = PhysicalFileProvider.Search(args.Path, args.SearchString, false, false, args.FileDetails);
+    }
+
+    public void OnRename(RenameEventArgs<FileManagerDirectoryContent> args)
+    {
+        args.Response = PhysicalFileProvider.Rename(args.Path, args.Name, args.NewName, false, args.ShowFileExtension, args.FileDetails);
+    }
+
+    public void Renamed(RenamedEventArgs<FileManagerDirectoryContent> args)
+    {
+
+    }
+
+    public void OnCopy(TransferEventArgs<FileManagerDirectoryContent> args)
+    {
+        args.Response = PhysicalFileProvider.Copy(args.Path, args.TargetPath, args.Names, args.RenameFiles, args.TargetData, args.FileDetails);
+    }
+
+    public void Copied(TransferedEventArgs<FileManagerDirectoryContent> args)
+    {
+
+    }
+
+    public void OnMove(TransferEventArgs<FileManagerDirectoryContent> args)
+    {
+        args.Response = PhysicalFileProvider.Move(args.Path, args.TargetPath, args.Names, args.RenameFiles, args.TargetData, args.FileDetails);
+    }
+
+    public void Moved(TransferedEventArgs<FileManagerDirectoryContent> args)
+    {
+
+    }
+    void OnSend(BeforeSendEventArgs args)
+    {
+
+    }
+    public void OnUpload(UploadEventArgs<FileManagerDirectoryContent> args)
+    {
+        //PhysicalFileProvider.UploadFlatData(args.Path, args.FilesData, args.Action, args.FileDetails);
+    }
+    public void OnSuccess(SuccessEventArgs<FileManagerDirectoryContent> args)
+    {
+
+    }
+    public async Task UploadSuccess(UploadSuccessEventArgs<FileManagerDirectoryContent> args)
+    {
+        args.IsSelected = true;
+        args.AutoDialogClose = true;
+        try
+        {
+            foreach (var file in args.Files)
+            {
+                var folders = (file.FileInfo.Name).Split('/');
+                    // checking the folder upload
+                    if (folders.Length > 1)
+                    {
+                        for (var i = 0; i < folders.Length - 1; i++)
+                        {
+                            string newDirectoryPath = Path.Combine(PhysicalFileProvider.basePath + args.Path, folders[i]);
+                            if (Path.GetFullPath(newDirectoryPath) != (Path.GetDirectoryName(newDirectoryPath) + Path.DirectorySeparatorChar + folders[i]))
+                            {
+                                throw new UnauthorizedAccessException("Access denied for Directory-traversal");
+                            }
+                            if (!Directory.Exists(newDirectoryPath))
+                            {
+                               PhysicalFileProvider.Create(args.Path, folders[i]);
+                            }
+                            args.Path += folders[i] + "/";
+                        }
+                    }
+                var fullName = Path.Combine((PhysicalFileProvider.contentRootPath + args.Path), file.File.Name);
+                using (var filestream = new FileStream(fullName, FileMode.Create, FileAccess.Write))
+                {
+                    await file.File.OpenReadStream(long.MaxValue).CopyToAsync(filestream);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+    public void BeforeImageLoad(BeforeImageLoadEventArgs<FileManagerDirectoryContent> args)
+    {
+        var result = PhysicalFileProvider.GetImage(args.ImagePath, false, args.FileDetails);
+        args.FileStream = result.FileStream;
+    }
+
+    public void BeforeDownload(BeforeDownloadEventArgs<FileManagerDirectoryContent> args)
+    {
+        var downloadData = PhysicalFileProvider.Download(args.DownloadData.Path, args.DownloadData.Names, args.DownloadData.DownloadFileDetails.ToArray());
+        args.FileStream = downloadData.FileStream;
+        args.DownloadFileName = downloadData.FileDownloadName;
+    }
+}
+
+

@@ -1,0 +1,36 @@
+﻿@page "/fetchdata"
+
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.FileManager
+
+    <SfFileManager TValue="FileManagerDirectoryContent" >
+        <FileManagerAjaxSettings Url="https://ej2-aspcore-service.azurewebsites.net/api/FileManager/FileOperations"
+                                 UploadUrl="https://ej2-aspcore-service.azurewebsites.net/api/FileManager/Upload"
+                                 DownloadUrl="https://ej2-aspcore-service.azurewebsites.net/api/FileManager/Download"
+                                 GetImageUrl="https://ej2-aspcore-service.azurewebsites.net/api/FileManager/GetImage">
+        </FileManagerAjaxSettings>
+    <FileManagerEvents TValue="FileManagerDirectoryContent" OnSuccess="OnSuccess"></FileManagerEvents>
+        </SfFileManager>
+<SfUploader AutoUpload="true" AllowMultiple=true DirectoryUpload=true>
+    <UploaderEvents ValueChange="@OnChange" BeforeUpload="b" Success="Success"></UploaderEvents>
+</SfUploader>
+@code {
+    public void b(BeforeUploadEventArgs args)
+    {
+
+    }
+    private async Task OnChange(UploadChangeEventArgs args)
+    {
+
+    }
+
+    public void Success(Syncfusion.Blazor.Inputs.SuccessEventArgs args)
+    {
+
+    }
+
+    public void OnSuccess(SuccessEventArgs<FileManagerDirectoryContent> args)
+    {
+        
+    }
+}

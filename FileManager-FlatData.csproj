@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>FileManager_FlatData</RootNamespace>
+  </PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="AWSSDK.S3" Version="3.7.101.52" />
+		<PackageReference Include="Syncfusion.EJ2.AspNet.Core" Version="24.2.6" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\..\Dev\ej2-blazor-source\Syncfusion.Blazor\Syncfusion.Blazor.csproj" />
+	</ItemGroup>
+
+</Project>
