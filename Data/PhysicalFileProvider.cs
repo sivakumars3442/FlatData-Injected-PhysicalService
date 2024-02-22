@@ -60,7 +60,7 @@ namespace FileManager_FlatData.Data
             this.rootName = root.Name;
         }
 
-        public FileManagerResponse<FileManagerDirectoryContent> GetFiles(string path, bool showHiddenItems, params FileManagerDirectoryContent[] data)
+        public async Task<FileManagerResponse<FileManagerDirectoryContent>> GetFiles(string path, bool showHiddenItems, params FileManagerDirectoryContent[] data)
         {
             FileManagerResponse<FileManagerDirectoryContent> readResponse = new FileManagerResponse<FileManagerDirectoryContent>();
             try
@@ -97,7 +97,7 @@ namespace FileManager_FlatData.Data
                 }
                 readResponse.Files = ReadDirectories(directory, extensions, showHiddenItems, data).Cast<FileManagerDirectoryContent>().ToList();
                 readResponse.Files = readResponse.Files.Concat(ReadFiles(directory, extensions, showHiddenItems, data)).Cast<FileManagerDirectoryContent>().ToList();
-                return readResponse;
+                return await Task.FromResult(readResponse);
             }
             catch (Exception e)
             {
@@ -106,7 +106,7 @@ namespace FileManager_FlatData.Data
                 er.Code = er.Message.Contains("is not accessible. You need permission") ? "401" : "417";
                 if ((er.Code == "401") && !string.IsNullOrEmpty(accessMessage)) { er.Message = accessMessage; }
                 readResponse.Error = er;
-                return readResponse;
+                return await Task.FromResult(readResponse);
             }
         }
 
@@ -241,7 +241,7 @@ namespace FileManager_FlatData.Data
                 throw e;
             }
         }
-        public virtual FileManagerResponse<FileManagerDirectoryContent> Create(string path, string name, params FileManagerDirectoryContent[] data)
+        public async Task<FileManagerResponse<FileManagerDirectoryContent>> Create(string path, string name, params FileManagerDirectoryContent[] data)
         {
             FileManagerResponse<FileManagerDirectoryContent> createResponse = new FileManagerResponse<FileManagerDirectoryContent>();
             try
@@ -273,10 +273,9 @@ namespace FileManager_FlatData.Data
                     er.Code = "400";
                     er.Message = "A file or folder with the name " + exist.Name.ToString() + " already exists.";
                     createResponse.Error = er;
-
-                    return createResponse;
+                    return await Task.FromResult(createResponse);
                 }
-
+                await Task.Delay(1000);
                 string physicalPath = GetPath(path);
                 Directory.CreateDirectory(newDirectoryPath);
                 DirectoryInfo directory = new DirectoryInfo(newDirectoryPath);
@@ -291,7 +290,7 @@ namespace FileManager_FlatData.Data
                 CreateData.Permission = GetPermission(physicalPath, directory.Name, false);
                 FileManagerDirectoryContent[] newData = new FileManagerDirectoryContent[] { CreateData };
                 createResponse.Files = newData.Cast<FileManagerDirectoryContent>().ToList();
-                return createResponse;
+                return await Task.FromResult(createResponse);
             }
             catch (Exception e)
             {
@@ -406,7 +405,7 @@ namespace FileManager_FlatData.Data
             }
         }
 
-        public virtual FileManagerResponse<FileManagerDirectoryContent> Delete(string path, string[] names, params FileManagerDirectoryContent[] data)
+        public async Task<FileManagerResponse<FileManagerDirectoryContent>> Delete(string path, string[] names, params FileManagerDirectoryContent[] data)
         {
             FileManagerResponse<FileManagerDirectoryContent> DeleteResponse = new FileManagerResponse<FileManagerDirectoryContent>();
             List<FileManagerDirectoryContent> removedFiles = new List<FileManagerDirectoryContent>();
@@ -487,11 +486,11 @@ namespace FileManager_FlatData.Data
                     er.Code = "401";
                     if ((er.Code == "401") && !string.IsNullOrEmpty(accessMessage)) { er.Message = accessMessage; }
                     DeleteResponse.Error = er;
-                    return DeleteResponse;
+                    return await Task.FromResult(DeleteResponse);
                 }
                 else
                 {
-                    return DeleteResponse;
+                    return await Task.FromResult(DeleteResponse);
                 }
             }
             catch (Exception e)
@@ -505,7 +504,7 @@ namespace FileManager_FlatData.Data
             }
         }
 
-        public virtual FileManagerResponse<FileManagerDirectoryContent> Rename(string path, string name, string newName, bool replace = false, bool showFileExtension = true, params FileManagerDirectoryContent[] data)
+        public async Task<FileManagerResponse<FileManagerDirectoryContent>> Rename(string path, string name, string newName, bool replace = false, bool showFileExtension = true, params FileManagerDirectoryContent[] data)
         {
             FileManagerResponse<FileManagerDirectoryContent> renameResponse = new FileManagerResponse<FileManagerDirectoryContent>();
             try
@@ -554,7 +553,7 @@ namespace FileManager_FlatData.Data
                         er.Code = "400";
                         er.Message = "Cannot rename " + exist.Name.ToString() + " to " + newName + ": destination already exists.";
                         renameResponse.Error = er;
-                        return renameResponse;
+                        return await Task.FromResult(renameResponse);
                     }
                     info.MoveTo(newPath);
                 }
@@ -569,7 +568,7 @@ namespace FileManager_FlatData.Data
                         er.Message = "Cannot rename " + exist.Name.ToString() + " to " + newName + ": destination already exists.";
                         renameResponse.Error = er;
 
-                        return renameResponse;
+                        return await Task.FromResult(renameResponse);
                     }
                     else if (oldPath.Equals(newPath, StringComparison.OrdinalIgnoreCase))
                     {
@@ -586,7 +585,7 @@ namespace FileManager_FlatData.Data
                         GetFileDetails(newPath)
                     };
                 renameResponse.Files = addedData.Cast<FileManagerDirectoryContent>().ToList();
-                return renameResponse;
+                return await Task.FromResult(renameResponse);
             }
             catch (Exception e)
             {
@@ -599,7 +598,7 @@ namespace FileManager_FlatData.Data
             }
         }
 
-        public virtual FileManagerResponse<FileManagerDirectoryContent> Copy(string path, string targetPath, string[] names, string[] renameFiles, FileManagerDirectoryContent targetData, params FileManagerDirectoryContent[] data)
+        public async Task<FileManagerResponse<FileManagerDirectoryContent>> Copy(string path, string targetPath, string[] names, string[] renameFiles, FileManagerDirectoryContent targetData, params FileManagerDirectoryContent[] data)
         {
             FileManagerResponse<FileManagerDirectoryContent> copyResponse = new FileManagerResponse<FileManagerDirectoryContent>();
             try
@@ -771,6 +770,7 @@ namespace FileManager_FlatData.Data
                     }
                 }
                 copyResponse.Files = copiedFiles;
+                await Task.Delay(1000);
                 if (result != String.Empty)
                 {
                     string deniedPath = result.Substring(this.contentRootPath.Length);
@@ -778,7 +778,7 @@ namespace FileManager_FlatData.Data
                     er.Message = "'" + this.getFileNameFromPath(deniedPath) + "' is not accessible. You need permission to perform the copy action.";
                     er.Code = "401";
                     copyResponse.Error = er;
-                    return copyResponse;
+                    return await Task.FromResult(copyResponse);
                 }
 
                 if (existFiles.Count > 0)
@@ -791,7 +791,7 @@ namespace FileManager_FlatData.Data
                 }
                 if (missingFiles.Count == 0)
                 {
-                    return copyResponse;
+                    return await Task.FromResult(copyResponse);
                 }
                 else
                 {
@@ -815,7 +815,7 @@ namespace FileManager_FlatData.Data
             }
         }
 
-        public virtual FileManagerResponse<FileManagerDirectoryContent> Move(string path, string targetPath, string[] names, string[] renameFiles, FileManagerDirectoryContent targetData, params FileManagerDirectoryContent[] data)
+        public async Task<FileManagerResponse<FileManagerDirectoryContent>> Move(string path, string targetPath, string[] names, string[] renameFiles, FileManagerDirectoryContent targetData, params FileManagerDirectoryContent[] data)
         {
             FileManagerResponse<FileManagerDirectoryContent> moveResponse = new FileManagerResponse<FileManagerDirectoryContent>();
             try
@@ -1005,6 +1005,7 @@ namespace FileManager_FlatData.Data
                     }
                 }
                 moveResponse.Files = movedFiles;
+                await Task.Delay(1000);
                 if (result != String.Empty)
                 {
                     string deniedPath = result.Substring(this.contentRootPath.Length);
@@ -1012,7 +1013,7 @@ namespace FileManager_FlatData.Data
                     er.Message = "'" + this.getFileNameFromPath(deniedPath) + "' is not accessible. You need permission to perform this action.";
                     er.Code = "401";
                     moveResponse.Error = er;
-                    return moveResponse;
+                    return await Task.FromResult(moveResponse);
                 }
                 if (existFiles.Count > 0)
                 {
@@ -1024,7 +1025,7 @@ namespace FileManager_FlatData.Data
                 }
                 if (missingFiles.Count == 0)
                 {
-                    return moveResponse;
+                    return await Task.FromResult(moveResponse);
                 }
                 else
                 {
@@ -1050,7 +1051,7 @@ namespace FileManager_FlatData.Data
             }
         }
 
-        public virtual FileManagerResponse<FileManagerDirectoryContent> Search(string path, string searchString, bool showHiddenItems = false, bool caseSensitive = false, params FileManagerDirectoryContent[] data)
+        public async Task<FileManagerResponse<FileManagerDirectoryContent>> Search(string path, string searchString, bool showHiddenItems = false, bool caseSensitive = false, params FileManagerDirectoryContent[] data)
         {
             FileManagerResponse<FileManagerDirectoryContent> searchResponse = new FileManagerResponse<FileManagerDirectoryContent>();
             try
@@ -1138,7 +1139,7 @@ namespace FileManager_FlatData.Data
                     }
                 }
                 searchResponse.Files = foundedFiles;
-                return searchResponse;
+                return await Task.FromResult(searchResponse);
             }
             catch (Exception e)
             {
@@ -1147,7 +1148,7 @@ namespace FileManager_FlatData.Data
                 er.Code = er.Message.Contains("is not accessible. You need permission") ? "401" : "417";
                 if ((er.Code == "401") && !string.IsNullOrEmpty(accessMessage)) { er.Message = accessMessage; }
                 searchResponse.Error = er;
-                return searchResponse;
+                return await Task.FromResult(searchResponse);
             }
         }
 
@@ -1179,7 +1180,7 @@ namespace FileManager_FlatData.Data
                        + "$";
         }
 
-        public virtual FileStreamResult GetImage(string path, bool allowCompress, params FileManagerDirectoryContent[] data)
+        public async Task<FileStreamResult> GetImage(string path, bool allowCompress, params FileManagerDirectoryContent[] data)
         {
             try
             {
@@ -1201,7 +1202,7 @@ namespace FileManager_FlatData.Data
 
                 FileStream fileStreamInput = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
                 FileStreamResult fileStreamResult = new FileStreamResult(fileStreamInput, "APPLICATION/octet-stream");
-                return fileStreamResult;
+                return await Task.FromResult(fileStreamResult);
             }
             catch (Exception)
             {

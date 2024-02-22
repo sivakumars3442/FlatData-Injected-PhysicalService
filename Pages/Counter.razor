@@ -4,8 +4,8 @@
 @using Microsoft.AspNetCore.Mvc
 @inject AmazonService AmazonService
 @inject AmazonS3FileProvider AmazonS3FileProvider
-<SfFileManager TValue="FileManagerDirectoryContent">
-    <FileManagerEvents TValue="FileManagerDirectoryContent" OnRead="OnRead" OnDelete="OnDelete" OnDetails="OnDetails" OnFolderCreate="OnModelCreate" OnSearch="OnSearch" OnRename="OnRename" OnCopy="OnCopy" OnMove="OnMove" OnUpload="OnUpload" BeforeImageLoad="BeforeImageLoad" BeforeDownload="BeforeDownload"></FileManagerEvents>
+@* <SfFileManager TValue="FileManagerDirectoryContent">
+    <FileManagerEvents TValue="FileManagerDirectoryContent" OnRead="OnRead" ItemsDeleting="OnDelete" OnFolderCreate="OnModelCreate" OnSearch="OnSearch" OnRename="OnRename" OnCopy="OnCopy" OnMove="OnMove" OnUpload="OnUpload" BeforeImageLoad="BeforeImageLoad" BeforeDownload="BeforeDownload"></FileManagerEvents>
 </SfFileManager>
 @code{
     public void OnSend(BeforeSendEventArgs args)
@@ -14,17 +14,12 @@
     }
     public void OnRead(ReadEventArgs<FileManagerDirectoryContent> args)
     {
-        args.Response = AmazonS3FileProvider.GetFiles(args.Path, false, args.FileDetails);
+        args.Response = AmazonS3FileProvider.GetFiles(args.Path, false, args.Files.ToArray());
     }
-    public void OnDelete(DeleteEventArgs<FileManagerDirectoryContent> args)
+    public void OnDelete(ItemsDeletingEventArgs<FileManagerDirectoryContent> args)
     {
-        args.Response = AmazonS3FileProvider.Delete(args.Path, args.Names, args.FileDetails);
-    }
-
-    public void OnDetails(DetailsEventArgs<FileManagerDirectoryContent> args)
-    {
-        string[] names = args.FileDetails.Select(x => x.Name).ToArray();
-        args.Response = AmazonS3FileProvider.Details(args.Path, names, args.FileDetails);
+        string[] names = args.Files.Select(x => x.Name).ToArray();
+        args.Response = AmazonS3FileProvider.Delete(args.Path, names, args.Files.ToArray());
     }
 
     public void OnModelCreate(FolderCreateEventArgs<FileManagerDirectoryContent> args)
@@ -69,6 +64,6 @@
         args.FileStream = downloadData.FileStream;
         args.DownloadFileName = downloadData.FileDownloadName;
     }
-}
+} *@
 
 

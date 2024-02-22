@@ -3,35 +3,30 @@
 @using FileManager_FlatData.Data
 @using Microsoft.AspNetCore.Mvc
 @inject PhysicalFileProvider PhysicalFileProvider
-<SfFileManager TValue="FileManagerDirectoryContent" View="ViewType.LargeIcons">
+<SfFileManager TValue="FileManagerDirectoryContent">
     <FileManagerUploadSettings DirectoryUpload=false></FileManagerUploadSettings>
-    <FileManagerEvents TValue="FileManagerDirectoryContent" OnSend="OnSend" OnRead="OnRead" OnDelete="OnDelete"  Deleted="Deleted" OnSuccess="OnSuccess" OnGetDetails="OnDetails" OnFolderCreate="OnModelCreate" FolderCreated="ModelCreated" OnSearch="OnSearch" OnRename="OnRename" Renamed="Renamed" OnCopy="OnCopy" Copied="Copied" OnMove="OnMove" Moved="Moved" OnUpload="OnUpload" UploadSuccess="UploadSuccess" BeforeImageLoad="BeforeImageLoad" BeforeDownload="BeforeDownload"></FileManagerEvents>
+    <FileManagerEvents TValue="FileManagerDirectoryContent" OnSend="OnSend" OnRead="OnRead" ItemsDeleting="OnDelete"  ItemsDeleted="Deleted" OnSuccess="OnSuccess" FolderCreating="OnModelCreate" FolderCreated="ModelCreated" Searching="OnSearch" Searched="Searched" ItemRenaming="OnRename" ItemRenamed="Renamed" ItemsCopying="OnCopy" ItemsCopied="Copied" ItemsMoving="OnMove" ItemsMoved="Moved" ItemsUploading="OnUpload" ItemsUploaded="UploadSuccess" BeforeImageLoad="BeforeImageLoad" BeforeDownload="BeforeDownload"></FileManagerEvents>
 </SfFileManager>
 @code{
-    public void OnRead(ReadEventArgs<FileManagerDirectoryContent> args)
+    public async Task OnRead(ReadEventArgs<FileManagerDirectoryContent> args)
     {
-        args.Response = PhysicalFileProvider.GetFiles(args.Path, false, args.FileDetails);
+        args.Response = await PhysicalFileProvider.GetFiles(args.Path, false, args.Files.ToArray());
     }
 
-    public void OnDelete(DeleteEventArgs<FileManagerDirectoryContent> args)
+    public async Task OnDelete(ItemsDeletingEventArgs<FileManagerDirectoryContent> args)
     {
-        args.Response = PhysicalFileProvider.Delete(args.Path, args.Names, args.FileDetails);
+        string[] names = args.Files.Select(x => x.Name).ToArray();
+        args.Response = await PhysicalFileProvider.Delete(args.Path, names, args.Files.ToArray());
     }
 
-    public void Deleted(DeletedEventArgs<FileManagerDirectoryContent> args)
+    public void Deleted(ItemsDeletedEventArgs<FileManagerDirectoryContent> args)
     {
 
     }
 
-    public void OnDetails(DetailsEventArgs<FileManagerDirectoryContent> args)
+    public async Task OnModelCreate(FolderCreatingEventArgs<FileManagerDirectoryContent> args)
     {
-        string[] names = args.FileDetails.Select(x => x.Name).ToArray();
-        args.Response = PhysicalFileProvider.Details(args.Path, names, args.FileDetails);
-    }
-
-    public void OnModelCreate(FolderCreateEventArgs<FileManagerDirectoryContent> args)
-    {
-        args.Response = PhysicalFileProvider.Create(args.Path, args.CreatedFolderName, args.FileDetails);
+        args.Response = await PhysicalFileProvider.Create(args.Path, args.CreatedFolderName, args.Files.ToArray());
     }
 
     public void ModelCreated(FolderCreatedEventArgs<FileManagerDirectoryContent> args)
@@ -39,37 +34,44 @@
 
     }
 
-    public void OnSearch(SearchEventArgs<FileManagerDirectoryContent> args)
+    public async Task OnSearch(SearchingEventArgs<FileManagerDirectoryContent> args)
     {
-        args.Response = PhysicalFileProvider.Search(args.Path, args.SearchString, false, false, args.FileDetails);
+        args.Response = await PhysicalFileProvider.Search(args.Path, args.SearchText, false, false, args.Files.ToArray());
     }
 
-    public void OnRename(RenameEventArgs<FileManagerDirectoryContent> args)
-    {
-        args.Response = PhysicalFileProvider.Rename(args.Path, args.Name, args.NewName, false, args.ShowFileExtension, args.FileDetails);
-    }
-
-    public void Renamed(RenamedEventArgs<FileManagerDirectoryContent> args)
+    public void Searched(SearchedEventArgs<FileManagerDirectoryContent> args)
     {
 
     }
 
-    public void OnCopy(TransferEventArgs<FileManagerDirectoryContent> args)
+    public async Task OnRename(ItemRenamingEventArgs<FileManagerDirectoryContent> args)
     {
-        args.Response = PhysicalFileProvider.Copy(args.Path, args.TargetPath, args.Names, args.RenameFiles, args.TargetData, args.FileDetails);
+        args.Response = await PhysicalFileProvider.Rename(args.Path, args.Files.First().Name, args.NewName, false, args.ShowFileExtension, args.Files.ToArray());
     }
 
-    public void Copied(TransferedEventArgs<FileManagerDirectoryContent> args)
+    public void Renamed(ItemRenamedEventArgs<FileManagerDirectoryContent> args)
     {
 
     }
 
-    public void OnMove(TransferEventArgs<FileManagerDirectoryContent> args)
+    public async Task OnCopy(ItemsCopyingEventArgs<FileManagerDirectoryContent> args)
     {
-        args.Response = PhysicalFileProvider.Move(args.Path, args.TargetPath, args.Names, args.RenameFiles, args.TargetData, args.FileDetails);
+        string[] names = args.Files.Select(x => x.Name).ToArray();
+        args.Response = await PhysicalFileProvider.Copy(args.Path, args.TargetPath, names, args.RenameFiles, args.TargetData, args.Files.ToArray());
     }
 
-    public void Moved(TransferedEventArgs<FileManagerDirectoryContent> args)
+    public void Copied(ItemsCopiedEventArgs<FileManagerDirectoryContent> args)
+    {
+
+    }
+
+    public async Task OnMove(ItemsMovingEventArgs<FileManagerDirectoryContent> args)
+    {
+        string[] names = args.Files.Select(x => x.Name).ToArray();
+        args.Response = await PhysicalFileProvider.Move(args.Path, args.TargetPath, names, args.RenameFiles, args.TargetData, args.Files.ToArray());
+    }
+
+    public void Moved(ItemsMovedEventArgs<FileManagerDirectoryContent> args)
     {
 
     }
@@ -77,7 +79,7 @@
     {
 
     }
-    public void OnUpload(UploadEventArgs<FileManagerDirectoryContent> args)
+    public void OnUpload(ItemsUploadingEventArgs<FileManagerDirectoryContent> args)
     {
         //PhysicalFileProvider.UploadFlatData(args.Path, args.FilesData, args.Action, args.FileDetails);
     }
@@ -85,7 +87,7 @@
     {
 
     }
-    public async Task UploadSuccess(UploadSuccessEventArgs<FileManagerDirectoryContent> args)
+    public async Task UploadSuccess(ItemsUploadedEventArgs<FileManagerDirectoryContent> args)
     {
         args.IsSelected = true;
         args.AutoDialogClose = true;
@@ -106,7 +108,7 @@
                             }
                             if (!Directory.Exists(newDirectoryPath))
                             {
-                               PhysicalFileProvider.Create(args.Path, folders[i]);
+                               await PhysicalFileProvider.Create(args.Path, folders[i]);
                             }
                             args.Path += folders[i] + "/";
                         }
@@ -124,9 +126,9 @@
         }
     }
 
-    public void BeforeImageLoad(BeforeImageLoadEventArgs<FileManagerDirectoryContent> args)
+    public async Task BeforeImageLoad(BeforeImageLoadEventArgs<FileManagerDirectoryContent> args)
     {
-        var result = PhysicalFileProvider.GetImage(args.ImagePath, false, args.FileDetails);
+        var result = await PhysicalFileProvider.GetImage(args.ImagePath, false, args.FileDetails);
         args.FileStream = result.FileStream;
     }
 
